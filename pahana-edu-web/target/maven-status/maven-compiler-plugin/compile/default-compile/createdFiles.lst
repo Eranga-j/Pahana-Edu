@@ -6,5 +6,6 @@ com\pahanaedu\web\servlets\LoginServlet.class
 com\pahanaedu\web\servlets\ItemServlet.class
 com\pahanaedu\web\filters\RoleFilter.class
 com\pahanaedu\web\servlets\CustomerServlet.class
+com\pahanaedu\web\servlets\CustomerServlet$1.class
 com\pahanaedu\web\servlets\LogoutServlet.class
 com\pahanaedu\web\servlets\BillingServlet.class

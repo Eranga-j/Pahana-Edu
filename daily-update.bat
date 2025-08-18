@@ -35,7 +35,7 @@ for /f "delims=" %%b in ('git branch --show-current') do set "BRANCH=%%b"
 
 REM Default commit message (no arg given)
 if "%MSG%"=="" (
-  for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm')"` ) do set "MSG=feat(test): BillsResourceTest %%t"
+  for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm')"` ) do set "MSG=feat(new jsp): jsp creat %%t"
 )
 
 echo.
