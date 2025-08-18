@@ -52,7 +52,7 @@ git diff --cached --quiet
 if ($LASTEXITCODE -eq 0) {
   Write-Host "[INFO] Nothing to commit."
 } else {
-  git commit -m "$Message"
+  git commit -m "New Customer add"
 }
 
 # Push; set upstream if missing
