@@ -33,9 +33,9 @@ git rev-parse --is-inside-work-tree >nul 2>&1 || (
 
 for /f "delims=" %%b in ('git branch --show-current') do set "BRANCH=%%b"
 
-REM Default message via PowerShell date formatting (locale-safe)
+REM Default commit message (no arg given)
 if "%MSG%"=="" (
-  for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm')"` ) do set "MSG=chore(daily): auto update %%t"
+  for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "(Get-Date).ToString('yyyy-MM-dd HH:mm')"` ) do set "MSG=feat(customer): add new customer %%t"
 )
 
 echo.
