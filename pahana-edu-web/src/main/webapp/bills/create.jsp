@@ -16,8 +16,8 @@
   <form method="post" action="${pageContext.request.contextPath}/billing" onsubmit="return beforeSubmit()">
     <!-- Customer -->
     <label>Customer</label>
-    <select name="customerId" required>
-      <option value="">-- Select --</option>
+    <select name="customerId" id="customerId" class="form-control">
+      <option value="">Walk-in / No customer</option>
       <%
         List<Map<String,Object>> customers =
             (List<Map<String,Object>>) request.getAttribute("customers");

@@ -14,6 +14,10 @@ import java.util.*;
 @WebServlet(name = "BillingServlet", urlPatterns = {"/billing"})
 public class BillingServlet extends HttpServlet {
 
+    // NEW: Guest defaults
+    private static final int GUEST_CUSTOMER_ID = 1;
+    private static final String GUEST_CUSTOMER_NAME = "Walk-in Customer";
+
     private String apiBase;
 
     @Override
@@ -39,6 +43,8 @@ public class BillingServlet extends HttpServlet {
             m.put("id", Integer.valueOf(o.getInt("id")));
             m.put("accountNumber", o.getString("accountNumber", ""));
             m.put("name", o.getString("name", ""));
+            // Optional: skip showing the Guest in the dropdown
+            // if (Objects.equals(m.get("id"), GUEST_CUSTOMER_ID)) continue;
             customers.add(m);
         }
 
@@ -75,11 +81,13 @@ public class BillingServlet extends HttpServlet {
         String[] qtys        = req.getParameterValues("qty");
         String[] unitPrices  = req.getParameterValues("unitPrice");
 
+        // CHANGED: default to Guest when empty (no redirect)
+        int customerId;
         if (customerIdStr == null || customerIdStr.isBlank()) {
-            resp.sendRedirect(req.getContextPath() + "/billing");
-            return;
+            customerId = GUEST_CUSTOMER_ID;  // Walk-in
+        } else {
+            customerId = Integer.parseInt(customerIdStr);
         }
-        int customerId = Integer.parseInt(customerIdStr);
 
         // ----- Build JSON payload for the service
         JsonArrayBuilder lines = Json.createArrayBuilder();
@@ -199,6 +207,11 @@ public class BillingServlet extends HttpServlet {
             JsonObject c = api.getJson("/customers/" + customerId).asJsonObject();
             customerName = c.getString("name", null);
         } catch (Exception ignored) {}
+
+        // NEW: if guest and no name fetched, show a friendly default
+        if ((customerName == null || customerName.isBlank()) && customerId == GUEST_CUSTOMER_ID) {
+            customerName = GUEST_CUSTOMER_NAME;
+        }
 
         List<Map<String, Object>> lines = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
