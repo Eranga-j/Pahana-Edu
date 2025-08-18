@@ -1,0 +1,10 @@
+package com.pahanaedu.service.dao;
+import com.pahanaedu.service.db.Database; import com.pahanaedu.service.model.Item; import java.sql.*; import java.util.*;
+public class ItemDAO {
+    public java.util.List<Item> findAll() throws SQLException { try (Connection con=Database.getConnection(); PreparedStatement ps=con.prepareStatement("SELECT id, sku, name, unit_price FROM items ORDER BY id DESC"); ResultSet rs=ps.executeQuery()){ java.util.List<Item> list=new java.util.ArrayList<>(); while(rs.next()) list.add(map(rs)); return list; } }
+    public Item findById(int id) throws SQLException { try (Connection con=Database.getConnection(); PreparedStatement ps=con.prepareStatement("SELECT id, sku, name, unit_price FROM items WHERE id=?")){ ps.setInt(1,id); try(ResultSet rs=ps.executeQuery()){ return rs.next()? map(rs):null; } } }
+    public Item create(Item it) throws SQLException { try (Connection con=Database.getConnection(); PreparedStatement ps=con.prepareStatement("INSERT INTO items (sku, name, unit_price) VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS)){ ps.setString(1,it.getSku()); ps.setString(2,it.getName()); ps.setBigDecimal(3,it.getUnitPrice()); ps.executeUpdate(); try(ResultSet k=ps.getGeneratedKeys()){ if(k.next()) it.setId(k.getInt(1)); } return it; } }
+    public boolean update(int id, Item it) throws SQLException { try (Connection con=Database.getConnection(); PreparedStatement ps=con.prepareStatement("UPDATE items SET sku=?, name=?, unit_price=? WHERE id=?")){ ps.setString(1,it.getSku()); ps.setString(2,it.getName()); ps.setBigDecimal(3,it.getUnitPrice()); ps.setInt(4,id); return ps.executeUpdate()==1; } }
+    public boolean delete(int id) throws SQLException { try (Connection con=Database.getConnection(); PreparedStatement ps=con.prepareStatement("DELETE FROM items WHERE id=?")){ ps.setInt(1,id); return ps.executeUpdate()==1; } }
+    private Item map(ResultSet rs) throws SQLException { return new Item(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getBigDecimal(4)); }
+}

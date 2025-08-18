@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE resources PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 Resource Definitions//EN" "http://glassfish.org/dtds/glassfish-resources_1_5.dtd">
+<resources>
+  <jdbc-connection-pool name="PahanaEduPool" res-type="javax.sql.DataSource"
+                        datasource-classname="com.mysql.cj.jdbc.MysqlDataSource">
+    <property name="serverName" value="localhost"/>
+    <property name="portNumber" value="3306"/>
+    <property name="databaseName" value="pahanaedu"/>
+    <property name="user" value="root"/>
+    <property name="password" value=""/>
+    <property name="useSSL" value="false"/>
+    <property name="allowPublicKeyRetrieval" value="true"/>
+    <property name="serverTimezone" value="UTC"/>
+  </jdbc-connection-pool>
+  <jdbc-resource pool-name="PahanaEduPool" jndi-name="jdbc/pahanaedu"/>
+</resources>
