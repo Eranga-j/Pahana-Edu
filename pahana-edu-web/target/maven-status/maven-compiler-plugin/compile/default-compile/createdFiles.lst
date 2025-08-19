@@ -9,3 +9,4 @@ com\pahanaedu\web\servlets\CustomerServlet.class
 com\pahanaedu\web\servlets\CustomerServlet$1.class
 com\pahanaedu\web\servlets\LogoutServlet.class
 com\pahanaedu\web\servlets\BillingServlet.class
+com\pahanaedu\web\servlets\BillPdfServlet.class

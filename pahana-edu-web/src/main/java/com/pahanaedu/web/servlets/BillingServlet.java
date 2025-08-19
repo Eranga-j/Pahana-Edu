@@ -14,8 +14,7 @@ import java.util.*;
 @WebServlet(name = "BillingServlet", urlPatterns = {"/billing"})
 public class BillingServlet extends HttpServlet {
 
-    // NEW: Guest defaults
-    private static final int GUEST_CUSTOMER_ID = 1;
+    private static final int    GUEST_CUSTOMER_ID   = 1;
     private static final String GUEST_CUSTOMER_NAME = "Walk-in Customer";
 
     private String apiBase;
@@ -34,7 +33,6 @@ public class BillingServlet extends HttpServlet {
 
         ApiClient api = new ApiClient(apiBase);
 
-        // ---- Customers -> List<Map> (id, accountNumber, name)
         JsonArray custArr = api.getJson("/customers").asJsonArray();
         List<Map<String, Object>> customers = new ArrayList<>();
         for (int i = 0; i < custArr.size(); i++) {
@@ -43,12 +41,9 @@ public class BillingServlet extends HttpServlet {
             m.put("id", Integer.valueOf(o.getInt("id")));
             m.put("accountNumber", o.getString("accountNumber", ""));
             m.put("name", o.getString("name", ""));
-            // Optional: skip showing the Guest in the dropdown
-            // if (Objects.equals(m.get("id"), GUEST_CUSTOMER_ID)) continue;
             customers.add(m);
         }
 
-        // ---- Items -> List<Map> (id, sku, name, unitPrice BigDecimal)
         JsonArray itemArr = api.getJson("/items").asJsonArray();
         List<Map<String, Object>> items = new ArrayList<>();
         for (int i = 0; i < itemArr.size(); i++) {
@@ -75,125 +70,120 @@ public class BillingServlet extends HttpServlet {
 
         ApiClient api = new ApiClient(apiBase);
 
-        // ----- Read form
         String customerIdStr = req.getParameter("customerId");
         String[] itemIds     = req.getParameterValues("itemId");
         String[] qtys        = req.getParameterValues("qty");
         String[] unitPrices  = req.getParameterValues("unitPrice");
 
-        // CHANGED: default to Guest when empty (no redirect)
-        int customerId;
-        if (customerIdStr == null || customerIdStr.isBlank()) {
-            customerId = GUEST_CUSTOMER_ID;  // Walk-in
-        } else {
-            customerId = Integer.parseInt(customerIdStr);
+        int customerId = (customerIdStr == null || customerIdStr.isBlank())
+                ? GUEST_CUSTOMER_ID : Integer.parseInt(customerIdStr);
+
+        HttpSession session = req.getSession(false);
+        int createdBy = 1;
+        if (session != null) {
+            Object u = session.getAttribute("userId");
+            if (u instanceof Integer) createdBy = (Integer) u;
+            else if (u instanceof String && !((String) u).isBlank()) {
+                try { createdBy = Integer.parseInt((String) u); } catch (NumberFormatException ignored) {}
+            }
         }
 
-        // ----- Build JSON payload for the service
         JsonArrayBuilder lines = Json.createArrayBuilder();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        int chosen = 0;
+
         if (itemIds != null) {
             for (int i = 0; i < itemIds.length; i++) {
                 String idStr = itemIds[i];
                 if (idStr == null || idStr.isBlank()) continue;
+                int itemId = Integer.parseInt(idStr);
 
-                int qty = (qtys != null && i < qtys.length && qtys[i] != null && !qtys[i].isBlank())
-                        ? Integer.parseInt(qtys[i]) : 1;
+                int qty = 1;
+                if (qtys != null && i < qtys.length && qtys[i] != null && !qtys[i].isBlank()) {
+                    try { qty = Math.max(1, Integer.parseInt(qtys[i].trim())); } catch (NumberFormatException ignored) {}
+                }
 
-                BigDecimal price = (unitPrices != null && i < unitPrices.length
-                        && unitPrices[i] != null && !unitPrices[i].isBlank())
-                        ? new BigDecimal(unitPrices[i].trim()) : BigDecimal.ZERO;
+                BigDecimal price = BigDecimal.ZERO;
+                if (unitPrices != null && i < unitPrices.length && unitPrices[i] != null && !unitPrices[i].isBlank()) {
+                    try {
+                        price = new BigDecimal(unitPrices[i].trim());
+                        if (price.signum() < 0) price = BigDecimal.ZERO;
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                BigDecimal lineTotal = price.multiply(BigDecimal.valueOf(qty));
+                subtotal = subtotal.add(lineTotal);
+                chosen++;
 
                 lines.add(Json.createObjectBuilder()
-                        .add("itemId", Integer.parseInt(idStr))
+                        .add("itemId", itemId)
                         .add("qty", qty)
-                        .add("unitPrice", price));
+                        .add("unitPrice", price)
+                        .add("lineTotal", lineTotal));
             }
         }
 
+        if (chosen == 0) {
+            req.setAttribute("error", "Please select at least one item.");
+            doGet(req, resp);
+            return;
+        }
+
+        BigDecimal tax   = subtotal.multiply(new BigDecimal("0.18"));
+        BigDecimal total = subtotal.add(tax);
+
         JsonObject payload = Json.createObjectBuilder()
-                .add("customerId", customerId)
-                .add("items", lines)
+                .add("customerId",  customerId)
+                .add("createdBy",   createdBy)
+                .add("totalAmount", total)
+                .add("items",       lines)
                 .build();
 
-        Map<String, Object> billVM = null;
-
-        // 1) Try POST expecting JSON back
         JsonObject createdObj = null;
         try {
             JsonStructure js = api.sendJsonForJson("POST", "/bills", payload.toString());
             if (js != null && js.getValueType() == JsonValue.ValueType.OBJECT) {
                 createdObj = js.asJsonObject();
             }
-        } catch (IOException ignore) {
-            // service may return 204; we'll try other options below
+        } catch (IOException e) {
+            req.setAttribute("error", "Could not save the bill. Check the service is running and required fields are valid.");
+            doGet(req, resp);
+            return;
         }
 
-        // 2) If no JSON came back, try POST without expecting a body (for 204 responses)
-        if (createdObj == null) {
-            try {
-                api.sendJsonNoBody("POST", "/bills", payload.toString());
-            } catch (IOException ignore) {
-                // keep going; we'll still try to show something
-            }
-        }
-
-        // 3) If we have a full bill with items -> use it
+        Map<String, Object> billVM = null;
         if (createdObj != null
                 && createdObj.containsKey("items")
                 && !createdObj.isNull("items")
                 && createdObj.getJsonArray("items").size() > 0) {
             billVM = toViewModel(createdObj);
-        }
-
-        // 4) Otherwise: read back newest bill for this customer
-        if (billVM == null) {
+        } else {
             try {
-                JsonArray list = Json.createArrayBuilder().build();
-
-                // Prefer a filtered endpoint if your API supports it
-                try {
-                    JsonStructure js = api.getJson("/bills?customerId=" + customerId);
-                    if (js instanceof JsonArray) list = js.asJsonArray();
-                } catch (Exception ignored) { }
-
-                // If nothing came from the filtered endpoint, fallback to /bills
-                if (list.isEmpty()) {
-                    try {
-                        JsonStructure js = api.getJson("/bills");
-                        if (js instanceof JsonArray) list = js.asJsonArray();
-                    } catch (Exception ignored) { }
+                JsonStructure js = api.getJson("/bills?customerId=" + customerId);
+                if (js instanceof JsonArray arr) {
+                    JsonObject newest = pickNewestForCustomer(arr, customerId);
+                    if (newest != null) billVM = toViewModel(newest);
                 }
-
-                JsonObject newestForCustomer = pickNewestForCustomer(list, customerId);
-                if (newestForCustomer != null
-                        && newestForCustomer.containsKey("items")
-                        && !newestForCustomer.isNull("items")) {
-                    billVM = toViewModel(newestForCustomer);
-                }
-            } catch (Exception ignored) {
-                // continue to fallback
-            }
+            } catch (Exception ignored) {}
         }
 
-        // 5) Last resort: local VM (TMP- preview)
         if (billVM == null) {
-            billVM = buildLocalViewModel(api, customerId, itemIds, qtys, unitPrices);
-            req.setAttribute("unsavedNotice",
-                    "This invoice preview was not returned by the server (TMP-). Reports will not include it.");
+            req.setAttribute("error", "Bill was not created by the service.");
+            doGet(req, resp);
+            return;
         }
 
+        // -------- SUCCESS: forward to invoice page --------
         req.setAttribute("bill", billVM);
+        req.getSession(true).setAttribute("billForPrint", billVM); // NEW: save for print/pdf
         req.getRequestDispatcher("/bills/view.jsp").forward(req, resp);
     }
 
-    /** Build bill locally when service response is empty/minimal. */
     private Map<String, Object> buildLocalViewModel(ApiClient api,
                                                     int customerId,
                                                     String[] itemIds,
                                                     String[] qtys,
                                                     String[] unitPrices) throws IOException {
-
-        // Index all items by id for quick lookup
         Map<Integer, JsonObject> itemIndex = new HashMap<>();
         JsonArray allItems = api.getJson("/items").asJsonArray();
         for (int i = 0; i < allItems.size(); i++) {
@@ -201,14 +191,12 @@ public class BillingServlet extends HttpServlet {
             itemIndex.put(it.getInt("id"), it);
         }
 
-        // Try to get customer name
         String customerName = null;
         try {
             JsonObject c = api.getJson("/customers/" + customerId).asJsonObject();
             customerName = c.getString("name", null);
         } catch (Exception ignored) {}
 
-        // NEW: if guest and no name fetched, show a friendly default
         if ((customerName == null || customerName.isBlank()) && customerId == GUEST_CUSTOMER_ID) {
             customerName = GUEST_CUSTOMER_NAME;
         }
@@ -266,7 +254,6 @@ public class BillingServlet extends HttpServlet {
         return m;
     }
 
-    // Convert service JSON -> Map<String,Object> for JSPs (BigDecimal for money).
     private Map<String, Object> toViewModel(JsonObject b) {
         Map<String, Object> m = new HashMap<>();
         m.put("billNo", b.getString("billNo", ""));
@@ -298,14 +285,12 @@ public class BillingServlet extends HttpServlet {
         return m;
     }
 
-    /** Pick newest bill by createdAt for the given customer if possible; fallback to newest overall. */
     private static JsonObject pickNewestForCustomer(JsonArray arr, Integer customerId) {
         JsonObject newestMatch = null;
         String newestMatchKey = "";
 
         for (int i = 0; i < arr.size(); i++) {
             JsonObject b = arr.getJsonObject(i);
-            // Prefer records that have matching customerId
             Integer bId = (b.containsKey("customerId") && !b.isNull("customerId"))
                     ? b.getInt("customerId") : null;
 
@@ -318,18 +303,13 @@ public class BillingServlet extends HttpServlet {
                 }
             }
         }
-
         if (newestMatch != null) return newestMatch;
-
-        // Fallback: newest overall (if API didn't include customerId)
         return pickNewestByCreatedAt(arr);
     }
 
-    /** Pick newest bill by createdAt (lexicographic on ISO string). */
     private static JsonObject pickNewestByCreatedAt(JsonArray arr) {
         JsonObject newest = null;
         String newestKey = "";
-
         for (int i = 0; i < arr.size(); i++) {
             JsonObject b = arr.getJsonObject(i);
             String c = b.getString("createdAt", "");
