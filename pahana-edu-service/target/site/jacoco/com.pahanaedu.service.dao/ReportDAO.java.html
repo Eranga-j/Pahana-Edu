@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.dao</a> &gt; <span class="el_source">ReportDAO.java</span></div><h1>ReportDAO.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.dao;
+
+import com.pahanaedu.service.db.Database;
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.*;
+import java.math.BigDecimal;
+
+<span class="nc" id="L9">public class ReportDAO {</span>
+
+<span class="nc" id="L11">    public static class SalesSummaryRow {</span>
+        public LocalDate day;
+        public int invoices;
+        public BigDecimal subtotal, discountAmount, taxAmount, totalAmount;
+    }
+
+<span class="nc" id="L17">    public static class ItemSalesRow {</span>
+        public int itemId;
+        public String sku, name;
+        public BigDecimal qtySold, salesAmount;
+    }
+
+<span class="nc" id="L23">    public static class CustomerSalesRow {</span>
+        public int customerId;
+        public String customerName;
+        public Timestamp firstPurchase, lastPurchase;
+        public int invoices;
+        public BigDecimal totalSpent;
+    }
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">    private static java.sql.Date sql(LocalDate d) { return (d == null ? null : java.sql.Date.valueOf(d)); }</span>
+
+    public List&lt;SalesSummaryRow&gt; getSalesSummary(LocalDate from, LocalDate to) throws SQLException {
+<span class="nc" id="L34">        String sql = &quot;&quot;&quot;</span>
+            SELECT DATE(b.created_at) AS day,
+                   COUNT(DISTINCT b.id)       AS invoices,
+                   SUM(b.subtotal)            AS subtotal,
+                   SUM(b.discount_amount)     AS discount_amount,
+                   SUM(b.tax_amount)          AS tax_amount,
+                   SUM(b.total_amount)        AS total_amount
+            FROM bills b
+            WHERE (? IS NULL OR DATE(b.created_at) &gt;= ?)
+              AND (? IS NULL OR DATE(b.created_at) &lt;= ?)
+            GROUP BY DATE(b.created_at)
+            ORDER BY day
+        &quot;&quot;&quot;;
+<span class="nc" id="L47">        try (Connection con = Database.getConnection();</span>
+<span class="nc" id="L48">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="nc" id="L49">            ps.setDate(1, sql(from)); ps.setDate(2, sql(from));</span>
+<span class="nc" id="L50">            ps.setDate(3, sql(to));   ps.setDate(4, sql(to));</span>
+<span class="nc" id="L51">            List&lt;SalesSummaryRow&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L52">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                while (rs.next()) {</span>
+<span class="nc" id="L54">                    SalesSummaryRow r = new SalesSummaryRow();</span>
+<span class="nc" id="L55">                    java.sql.Date d = rs.getDate(&quot;day&quot;);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                    r.day = (d == null ? null : d.toLocalDate());</span>
+<span class="nc" id="L57">                    r.invoices = rs.getInt(&quot;invoices&quot;);</span>
+<span class="nc" id="L58">                    r.subtotal = rs.getBigDecimal(&quot;subtotal&quot;);</span>
+<span class="nc" id="L59">                    r.discountAmount = rs.getBigDecimal(&quot;discount_amount&quot;);</span>
+<span class="nc" id="L60">                    r.taxAmount = rs.getBigDecimal(&quot;tax_amount&quot;);</span>
+<span class="nc" id="L61">                    r.totalAmount = rs.getBigDecimal(&quot;total_amount&quot;);</span>
+<span class="nc" id="L62">                    rows.add(r);</span>
+<span class="nc" id="L63">                }</span>
+            }
+<span class="nc" id="L65">            return rows;</span>
+        }
+    }
+
+    public List&lt;ItemSalesRow&gt; getSalesByItem(LocalDate from, LocalDate to) throws SQLException {
+<span class="nc" id="L70">        String sql = &quot;&quot;&quot;</span>
+            SELECT i.id AS item_id, i.sku, i.name,
+                   SUM(bi.qty)                       AS qty_sold,
+                   SUM(bi.line_total)                AS sales_amount
+            FROM bill_items bi
+            JOIN items i ON i.id = bi.item_id
+            JOIN bills b ON b.id = bi.bill_id
+            WHERE (? IS NULL OR DATE(b.created_at) &gt;= ?)
+              AND (? IS NULL OR DATE(b.created_at) &lt;= ?)
+            GROUP BY i.id, i.sku, i.name
+            ORDER BY sales_amount DESC
+        &quot;&quot;&quot;;
+<span class="nc" id="L82">        try (Connection con = Database.getConnection();</span>
+<span class="nc" id="L83">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="nc" id="L84">            ps.setDate(1, sql(from)); ps.setDate(2, sql(from));</span>
+<span class="nc" id="L85">            ps.setDate(3, sql(to));   ps.setDate(4, sql(to));</span>
+<span class="nc" id="L86">            List&lt;ItemSalesRow&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L87">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                while (rs.next()) {</span>
+<span class="nc" id="L89">                    ItemSalesRow r = new ItemSalesRow();</span>
+<span class="nc" id="L90">                    r.itemId = rs.getInt(&quot;item_id&quot;);</span>
+<span class="nc" id="L91">                    r.sku = rs.getString(&quot;sku&quot;);</span>
+<span class="nc" id="L92">                    r.name = rs.getString(&quot;name&quot;);</span>
+<span class="nc" id="L93">                    r.qtySold = rs.getBigDecimal(&quot;qty_sold&quot;);</span>
+<span class="nc" id="L94">                    r.salesAmount = rs.getBigDecimal(&quot;sales_amount&quot;);</span>
+<span class="nc" id="L95">                    rows.add(r);</span>
+<span class="nc" id="L96">                }</span>
+            }
+<span class="nc" id="L98">            return rows;</span>
+        }
+    }
+
+    public List&lt;CustomerSalesRow&gt; getSalesByCustomer(LocalDate from, LocalDate to) throws SQLException {
+<span class="nc" id="L103">        String sql = &quot;&quot;&quot;</span>
+            SELECT c.id AS customer_id, c.name AS customer_name,
+                   MIN(b.created_at)           AS first_purchase,
+                   MAX(b.created_at)           AS last_purchase,
+                   COUNT(DISTINCT b.id)        AS invoices,
+                   SUM(b.total_amount)         AS total_spent
+            FROM bills b
+            JOIN customers c ON c.id = b.customer_id
+            WHERE (? IS NULL OR DATE(b.created_at) &gt;= ?)
+              AND (? IS NULL OR DATE(b.created_at) &lt;= ?)
+            GROUP BY c.id, c.name
+            ORDER BY total_spent DESC
+        &quot;&quot;&quot;;
+<span class="nc" id="L116">        try (Connection con = Database.getConnection();</span>
+<span class="nc" id="L117">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="nc" id="L118">            ps.setDate(1, sql(from)); ps.setDate(2, sql(from));</span>
+<span class="nc" id="L119">            ps.setDate(3, sql(to));   ps.setDate(4, sql(to));</span>
+<span class="nc" id="L120">            List&lt;CustomerSalesRow&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L121">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                while (rs.next()) {</span>
+<span class="nc" id="L123">                    CustomerSalesRow r = new CustomerSalesRow();</span>
+<span class="nc" id="L124">                    r.customerId = rs.getInt(&quot;customer_id&quot;);</span>
+<span class="nc" id="L125">                    r.customerName = rs.getString(&quot;customer_name&quot;);</span>
+<span class="nc" id="L126">                    r.firstPurchase = rs.getTimestamp(&quot;first_purchase&quot;);</span>
+<span class="nc" id="L127">                    r.lastPurchase = rs.getTimestamp(&quot;last_purchase&quot;);</span>
+<span class="nc" id="L128">                    r.invoices = rs.getInt(&quot;invoices&quot;);</span>
+<span class="nc" id="L129">                    r.totalSpent = rs.getBigDecimal(&quot;total_spent&quot;);</span>
+<span class="nc" id="L130">                    rows.add(r);</span>
+<span class="nc" id="L131">                }</span>
+            }
+<span class="nc" id="L133">            return rows;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

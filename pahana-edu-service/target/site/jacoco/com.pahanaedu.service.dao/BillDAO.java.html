@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BillDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.dao</a> &gt; <span class="el_source">BillDAO.java</span></div><h1>BillDAO.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.dao;
+import com.pahanaedu.service.db.Database; import com.pahanaedu.service.model.*; import java.sql.*; import java.util.*; import java.time.LocalDateTime;
+<span class="fc" id="L3">public class BillDAO {</span>
+    public Bill create(Bill bill) throws SQLException {
+<span class="fc" id="L5">        String billSql = &quot;INSERT INTO bills (bill_no, customer_id, total_amount, created_by) VALUES (?,?,?,?)&quot;;</span>
+<span class="fc" id="L6">        String lineSql = &quot;INSERT INTO bill_items (bill_id, item_id, qty, unit_price, line_total) VALUES (?,?,?,?,?)&quot;;</span>
+<span class="fc" id="L7">        try (Connection con = Database.getConnection()) {</span>
+<span class="fc" id="L8">            con.setAutoCommit(false);</span>
+<span class="fc" id="L9">            try (PreparedStatement ps = con.prepareStatement(billSql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L10">                ps.setString(1, bill.getBillNo()); ps.setInt(2, bill.getCustomerId()); ps.setBigDecimal(3, bill.getTotalAmount()); ps.setInt(4, bill.getCreatedBy());</span>
+<span class="fc" id="L11">                ps.executeUpdate();</span>
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">                int billId; try (ResultSet keys = ps.getGeneratedKeys()) { if (!keys.next()) throw new SQLException(&quot;No bill id generated&quot;); billId = keys.getInt(1); }</span>
+<span class="fc bfc" id="L13" title="All 2 branches covered.">                for (BillItem bi: bill.getItems()) try (PreparedStatement line = con.prepareStatement(lineSql)) {</span>
+<span class="fc" id="L14">                    line.setInt(1, billId); line.setInt(2, bi.getItemId()); line.setInt(3, bi.getQty()); line.setBigDecimal(4, bi.getUnitPrice()); line.setBigDecimal(5, bi.getLineTotal()); line.executeUpdate();</span>
+<span class="fc" id="L15">                }</span>
+<span class="fc" id="L16">                con.commit(); return findById(billId);</span>
+<span class="pc" id="L17">            } catch (SQLException e) { con.rollback(); throw e; } finally { con.setAutoCommit(true); }</span>
+        }
+    }
+    public Bill findById(int id) throws SQLException {
+<span class="fc" id="L21">        String billSql = &quot;SELECT b.id,b.bill_no,b.customer_id,c.name,b.total_amount,b.created_at,b.created_by FROM bills b JOIN customers c ON b.customer_id=c.id WHERE b.id=?&quot;;</span>
+<span class="fc" id="L22">        String itemsSql = &quot;SELECT bi.id, bi.item_id, i.name, bi.qty, bi.unit_price, bi.line_total FROM bill_items bi JOIN items i ON bi.item_id=i.id WHERE bi.bill_id=?&quot;;</span>
+<span class="fc" id="L23">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(billSql)) {</span>
+<span class="fc" id="L24">            ps.setInt(1, id);</span>
+<span class="fc" id="L25">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">                if (!rs.next()) return null;</span>
+<span class="fc" id="L27">                Bill bill = new Bill();</span>
+<span class="fc" id="L28">                bill.setId(rs.getInt(1)); bill.setBillNo(rs.getString(2)); bill.setCustomerId(rs.getInt(3)); bill.setCustomerName(rs.getString(4));</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">                bill.setTotalAmount(rs.getBigDecimal(5)); java.sql.Timestamp ts = rs.getTimestamp(6); bill.setCreatedAt(ts!=null? ts.toLocalDateTime(): LocalDateTime.now()); bill.setCreatedBy(rs.getInt(7));</span>
+<span class="fc" id="L30">                java.util.List&lt;BillItem&gt; items = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc" id="L31">                try (PreparedStatement ip = con.prepareStatement(itemsSql)) {</span>
+<span class="fc" id="L32">                    ip.setInt(1, id); try (ResultSet irs = ip.executeQuery()) {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">                        while (irs.next()) items.add(new BillItem(irs.getInt(1), irs.getInt(2), irs.getString(3), irs.getInt(4), irs.getBigDecimal(5), irs.getBigDecimal(6)));</span>
+                    }
+                }
+<span class="fc" id="L36">                bill.setItems(items); return bill;</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            }</span>
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        }</span>
+    }
+    public java.util.List&lt;Bill&gt; listRange(java.sql.Timestamp from, java.sql.Timestamp to) throws SQLException {
+<span class="fc" id="L41">        String billSql = &quot;SELECT b.id,b.bill_no,b.customer_id,c.name,b.total_amount,b.created_at,b.created_by FROM bills b JOIN customers c ON b.customer_id=c.id WHERE b.created_at BETWEEN ? AND ? ORDER BY b.created_at DESC&quot;;</span>
+<span class="fc" id="L42">        java.util.List&lt;Bill&gt; list = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc" id="L43">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(billSql)) {</span>
+<span class="fc" id="L44">            ps.setTimestamp(1, from); ps.setTimestamp(2, to);</span>
+<span class="fc" id="L45">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">                while (rs.next()) { Bill b = new Bill(); b.setId(rs.getInt(1)); b.setBillNo(rs.getString(2)); b.setCustomerId(rs.getInt(3)); b.setCustomerName(rs.getString(4)); b.setTotalAmount(rs.getBigDecimal(5)); java.sql.Timestamp ts=rs.getTimestamp(6); b.setCreatedAt(ts!=null? ts.toLocalDateTime(): null); b.setCreatedBy(rs.getInt(7)); b.setItems(java.util.Collections.emptyList()); list.add(b); }</span>
+            }
+        }
+<span class="fc" id="L49">        return list;</span>
+        }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

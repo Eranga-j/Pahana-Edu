@@ -1,14 +1,9 @@
 package com.pahanaedu.service.dao;
 
 import com.pahanaedu.service.db.Database;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.math.BigDecimal;
 
 public class ReportDAO {
@@ -37,16 +32,16 @@ public class ReportDAO {
 
     public List<SalesSummaryRow> getSalesSummary(LocalDate from, LocalDate to) throws SQLException {
         String sql = """
-            SELECT DATE(b.bill_date) AS day,
-                   COUNT(DISTINCT b.id) AS invoices,
-                   SUM(b.subtotal) AS subtotal,
-                   SUM(b.discount_amount) AS discount_amount,
-                   SUM(b.tax_amount) AS tax_amount,
-                   SUM(b.total_amount) AS total_amount
+            SELECT DATE(b.created_at) AS day,
+                   COUNT(DISTINCT b.id)       AS invoices,
+                   SUM(b.subtotal)            AS subtotal,
+                   SUM(b.discount_amount)     AS discount_amount,
+                   SUM(b.tax_amount)          AS tax_amount,
+                   SUM(b.total_amount)        AS total_amount
             FROM bills b
-            WHERE (? IS NULL OR DATE(b.bill_date) >= ?)
-              AND (? IS NULL OR DATE(b.bill_date) <= ?)
-            GROUP BY DATE(b.bill_date)
+            WHERE (? IS NULL OR DATE(b.created_at) >= ?)
+              AND (? IS NULL OR DATE(b.created_at) <= ?)
+            GROUP BY DATE(b.created_at)
             ORDER BY day
         """;
         try (Connection con = Database.getConnection();
@@ -74,13 +69,13 @@ public class ReportDAO {
     public List<ItemSalesRow> getSalesByItem(LocalDate from, LocalDate to) throws SQLException {
         String sql = """
             SELECT i.id AS item_id, i.sku, i.name,
-                   SUM(bi.quantity) AS qty_sold,
-                   SUM(bi.quantity * bi.unit_price) AS sales_amount
+                   SUM(bi.qty)                       AS qty_sold,
+                   SUM(bi.line_total)                AS sales_amount
             FROM bill_items bi
             JOIN items i ON i.id = bi.item_id
             JOIN bills b ON b.id = bi.bill_id
-            WHERE (? IS NULL OR DATE(b.bill_date) >= ?)
-              AND (? IS NULL OR DATE(b.bill_date) <= ?)
+            WHERE (? IS NULL OR DATE(b.created_at) >= ?)
+              AND (? IS NULL OR DATE(b.created_at) <= ?)
             GROUP BY i.id, i.sku, i.name
             ORDER BY sales_amount DESC
         """;
@@ -107,14 +102,14 @@ public class ReportDAO {
     public List<CustomerSalesRow> getSalesByCustomer(LocalDate from, LocalDate to) throws SQLException {
         String sql = """
             SELECT c.id AS customer_id, c.name AS customer_name,
-                   MIN(b.bill_date) AS first_purchase,
-                   MAX(b.bill_date) AS last_purchase,
-                   COUNT(DISTINCT b.id) AS invoices,
-                   SUM(b.total_amount) AS total_spent
+                   MIN(b.created_at)           AS first_purchase,
+                   MAX(b.created_at)           AS last_purchase,
+                   COUNT(DISTINCT b.id)        AS invoices,
+                   SUM(b.total_amount)         AS total_spent
             FROM bills b
             JOIN customers c ON c.id = b.customer_id
-            WHERE (? IS NULL OR DATE(b.bill_date) >= ?)
-              AND (? IS NULL OR DATE(b.bill_date) <= ?)
+            WHERE (? IS NULL OR DATE(b.created_at) >= ?)
+              AND (? IS NULL OR DATE(b.created_at) <= ?)
             GROUP BY c.id, c.name
             ORDER BY total_spent DESC
         """;

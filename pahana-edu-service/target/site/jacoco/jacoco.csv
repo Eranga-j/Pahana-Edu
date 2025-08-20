@@ -1,0 +1,25 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Pahana Edu Service,com.pahanaedu.service.db,Database,23,33,1,1,6,12,2,2,1,2
+Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.ItemSalesRow,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.SalesSummaryRow,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.dao,UserDAO,0,80,3,7,0,9,3,5,0,3
+Pahana Edu Service,com.pahanaedu.service.dao,CustomerDAO,2,176,3,7,0,12,3,9,0,7
+Pahana Edu Service,com.pahanaedu.service.dao,BillDAO,28,300,10,10,2,35,7,7,0,4
+Pahana Edu Service,com.pahanaedu.service.dao,ItemDAO,2,163,3,7,0,7,3,9,0,7
+Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.CustomerSalesRow,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO,255,0,10,0,56,0,10,0,5,0
+Pahana Edu Service,com.pahanaedu.service,ApplicationConfig,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.resources,ItemsResource,92,0,16,0,9,0,14,0,6,0
+Pahana Edu Service,com.pahanaedu.service.resources,CustomersResource,89,0,14,0,9,0,13,0,6,0
+Pahana Edu Service,com.pahanaedu.service.resources,AuthResource.LoginRequest,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.resources,ReportsResource,48,0,4,0,6,0,7,0,5,0
+Pahana Edu Service,com.pahanaedu.service.resources,AuthResource,83,0,14,0,11,0,9,0,2,0
+Pahana Edu Service,com.pahanaedu.service.resources,BillsResource,183,0,22,0,16,0,15,0,4,0
+Pahana Edu Service,com.pahanaedu.service.resources,BillsResource.Line,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.resources,BillsResource.CreateBillRequest,3,0,0,0,1,0,1,0,1,0
+Pahana Edu Service,com.pahanaedu.service.resources,Hashing,23,0,0,0,3,0,2,0,2,0
+Pahana Edu Service,com.pahanaedu.service.model,Customer,0,56,0,0,0,8,0,12,0,12
+Pahana Edu Service,com.pahanaedu.service.model,Item,83,46,12,0,11,20,10,10,4,10
+Pahana Edu Service,com.pahanaedu.service.model,User,24,12,0,0,4,1,7,1,7,1
+Pahana Edu Service,com.pahanaedu.service.model,Bill,194,76,33,3,37,20,24,15,6,15
+Pahana Edu Service,com.pahanaedu.service.model,BillItem,55,85,6,6,12,25,13,10,7,10

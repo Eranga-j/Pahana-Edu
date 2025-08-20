@@ -1,5 +1,4 @@
 com\pahanaedu\service\dao\UserDAOTest.class
 com\pahanaedu\service\dao\CustomerDAOTest.class
-com\pahanaedu\service\dao\ReportDAOTest.class
 com\pahanaedu\service\dao\BillDAOTest.class
 com\pahanaedu\service\dao\ItemDAOTest.class

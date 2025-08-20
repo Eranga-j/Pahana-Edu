@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Bill.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.model</a> &gt; <span class="el_source">Bill.java</span></div><h1>Bill.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.model;
+
+import jakarta.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbPropertyOrder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@JsonbPropertyOrder({
+        &quot;id&quot;, &quot;billNo&quot;, &quot;customerId&quot;, &quot;customerName&quot;,
+        &quot;totalAmount&quot;, &quot;createdAt&quot;, &quot;createdBy&quot;, &quot;items&quot;
+})
+public class Bill {
+
+    private int id;
+    private String billNo;
+    private int customerId;
+    private String customerName;
+
+    /** Always non-null; defaults to ZERO. */
+<span class="pc" id="L23">    private BigDecimal totalAmount = BigDecimal.ZERO;</span>
+
+    /** Serialize as ISO datetime (e.g., 2025-08-19T12:34:56). */
+<span class="pc" id="L26">    @JsonbDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ss&quot;)</span>
+<span class="pc" id="L27">    private LocalDateTime createdAt = LocalDateTime.now();</span>
+
+    private int createdBy;
+
+    /** Always non-null; defaults to empty list. */
+<span class="pc" id="L32">    private List&lt;BillItem&gt; items = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L34">    public Bill() { }</span>
+
+    public Bill(int id,
+                String billNo,
+                int customerId,
+                String customerName,
+                BigDecimal totalAmount,
+                LocalDateTime createdAt,
+                int createdBy,
+<span class="nc" id="L43">                List&lt;BillItem&gt; items) {</span>
+<span class="nc" id="L44">        this.id = id;</span>
+<span class="nc" id="L45">        this.billNo = billNo;</span>
+<span class="nc" id="L46">        this.customerId = customerId;</span>
+<span class="nc" id="L47">        this.customerName = customerName;</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        this.totalAmount = (totalAmount != null) ? totalAmount : BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();</span>
+<span class="nc" id="L50">        this.createdBy = createdBy;</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (items != null) this.items = new ArrayList&lt;&gt;(items);</span>
+<span class="nc" id="L52">    }</span>
+
+    // -------- Getters / Setters (null-safe where needed)
+
+<span class="fc" id="L56">    public int getId() { return id; }</span>
+<span class="fc" id="L57">    public void setId(int v) { this.id = v; }</span>
+
+<span class="fc" id="L59">    public String getBillNo() { return billNo; }</span>
+<span class="fc" id="L60">    public void setBillNo(String v) { this.billNo = v; }</span>
+
+<span class="fc" id="L62">    public int getCustomerId() { return customerId; }</span>
+<span class="fc" id="L63">    public void setCustomerId(int v) { this.customerId = v; }</span>
+
+<span class="nc" id="L65">    public String getCustomerName() { return customerName; }</span>
+<span class="fc" id="L66">    public void setCustomerName(String v) { this.customerName = v; }</span>
+
+<span class="fc" id="L68">    public BigDecimal getTotalAmount() { return totalAmount; }</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">    public void setTotalAmount(BigDecimal v) { this.totalAmount = (v != null) ? v : BigDecimal.ZERO; }</span>
+
+<span class="nc" id="L71">    public LocalDateTime getCreatedAt() { return createdAt; }</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">    public void setCreatedAt(LocalDateTime v) { this.createdAt = (v != null) ? v : LocalDateTime.now(); }</span>
+
+<span class="fc" id="L74">    public int getCreatedBy() { return createdBy; }</span>
+<span class="fc" id="L75">    public void setCreatedBy(int v) { this.createdBy = v; }</span>
+
+<span class="fc" id="L77">    public List&lt;BillItem&gt; getItems() { return items; }</span>
+    public void setItems(List&lt;BillItem&gt; v) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        this.items = (v != null) ? new ArrayList&lt;&gt;(v) : new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L80">    }</span>
+
+    // -------- Convenience helpers
+
+    /** Add a single item (null-safe) and keep totals consistent. */
+    public void addItem(BillItem item) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (item == null) return;</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (this.items == null) this.items = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L88">        this.items.add(item);</span>
+        // If lineTotal missing, compute it from qty * unitPrice
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (item.getLineTotal() == null) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            BigDecimal price = (item.getUnitPrice() != null) ? item.getUnitPrice() : BigDecimal.ZERO;</span>
+<span class="nc" id="L92">            BigDecimal qty = BigDecimal.valueOf(item.getQty());</span>
+<span class="nc" id="L93">            item.setLineTotal(price.multiply(qty));</span>
+        }
+        // Update the bill total
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        this.totalAmount = (this.totalAmount != null ? this.totalAmount : BigDecimal.ZERO)</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                .add(item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO);</span>
+<span class="nc" id="L98">    }</span>
+
+    /** Recompute totalAmount by summing item line totals (useful before persisting). */
+    public void recomputeTotals() {
+<span class="nc" id="L102">        BigDecimal sum = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (items != null) {</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            for (BillItem it : items) {</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (it == null) continue;</span>
+<span class="nc" id="L106">                BigDecimal lt = it.getLineTotal();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (lt == null) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                    BigDecimal price = (it.getUnitPrice() != null) ? it.getUnitPrice() : BigDecimal.ZERO;</span>
+<span class="nc" id="L109">                    lt = price.multiply(BigDecimal.valueOf(it.getQty()));</span>
+<span class="nc" id="L110">                    it.setLineTotal(lt);</span>
+                }
+<span class="nc" id="L112">                sum = sum.add(lt);</span>
+<span class="nc" id="L113">            }</span>
+        }
+<span class="nc" id="L115">        this.totalAmount = sum;</span>
+<span class="nc" id="L116">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L120">        return &quot;Bill{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, billNo='&quot; + billNo + '\'' +
+                &quot;, customerId=&quot; + customerId +
+                &quot;, customerName='&quot; + customerName + '\'' +
+                &quot;, totalAmount=&quot; + totalAmount +
+                &quot;, createdAt=&quot; + createdAt +
+                &quot;, createdBy=&quot; + createdBy +
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                &quot;, items=&quot; + (items != null ? items.size() : 0) +</span>
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

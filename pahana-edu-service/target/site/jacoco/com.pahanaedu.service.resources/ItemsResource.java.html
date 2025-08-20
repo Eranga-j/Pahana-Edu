@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ItemsResource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.resources</a> &gt; <span class="el_source">ItemsResource.java</span></div><h1>ItemsResource.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.resources;
+import com.pahanaedu.service.dao.ItemDAO; import com.pahanaedu.service.model.Item;
+import jakarta.ws.rs.*; import jakarta.ws.rs.core.*; import java.util.List;
+@Path(&quot;items&quot;) @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON)
+<span class="nc" id="L5">public class ItemsResource {</span>
+<span class="nc" id="L6">    private final ItemDAO dao = new ItemDAO();</span>
+<span class="nc" id="L7">    @GET public List&lt;Item&gt; list() throws Exception { return dao.findAll(); }</span>
+<span class="nc bnc" id="L8" title="All 2 branches missed.">    @GET @Path(&quot;{id}&quot;) public Response get(@PathParam(&quot;id&quot;) int id) throws Exception { Item it = dao.findById(id); return it==null? Response.status(Response.Status.NOT_FOUND).build(): Response.ok(it).build(); }</span>
+    @POST public Response create(Item it) throws Exception {
+<span class="nc bnc" id="L10" title="All 10 branches missed.">        if (it.getSku()==null || it.getSku().isBlank() || it.getName()==null || it.getName().isBlank() || it.getUnitPrice()==null)</span>
+<span class="nc" id="L11">            return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of(&quot;error&quot;,&quot;sku, name, unitPrice required&quot;)).build();</span>
+<span class="nc" id="L12">        return Response.status(Response.Status.CREATED).entity(dao.create(it)).build();</span>
+    }
+<span class="nc bnc" id="L14" title="All 2 branches missed.">    @PUT @Path(&quot;{id}&quot;) public Response update(@PathParam(&quot;id&quot;) int id, Item it) throws Exception { return dao.update(id,it)? Response.ok(java.util.Map.of(&quot;status&quot;,&quot;updated&quot;)).build(): Response.status(Response.Status.NOT_FOUND).build(); }</span>
+<span class="nc bnc" id="L15" title="All 2 branches missed.">    @DELETE @Path(&quot;{id}&quot;) public Response delete(@PathParam(&quot;id&quot;) int id) throws Exception { return dao.delete(id)? Response.ok(java.util.Map.of(&quot;status&quot;,&quot;deleted&quot;)).build(): Response.status(Response.Status.NOT_FOUND).build(); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

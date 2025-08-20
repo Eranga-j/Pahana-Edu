@@ -18,13 +18,13 @@
     <jakartaee.version>10.0.0</jakartaee.version>
     <mysql.version>8.4.0</mysql.version>
     <junit.version>5.10.2</junit.version>
-    <h2.version>2.2.224</h2.version>
     <surefire.version>3.2.5</surefire.version>
     <jacoco.version>0.8.11</jacoco.version>
   </properties>
 
+  <!-- ONE dependencies block only -->
   <dependencies>
-    <!-- Jakarta EE APIs (provided by GlassFish at runtime) -->
+    <!-- Jakarta EE APIs provided by the app server -->
     <dependency>
       <groupId>jakarta.platform</groupId>
       <artifactId>jakarta.jakartaee-api</artifactId>
@@ -32,15 +32,24 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- MySQL driver (runtime only; app server or container provides the DataSource) -->
+    <!-- MySQL driver:
+         - Kept as runtime so your DAOs can use JDBC fallback without copying the JAR to domain/lib.
+         - If your server already provides the driver, you can switch to <scope>provided</scope>. -->
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <version>${mysql.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+  <groupId>com.mysql</groupId>
+  <artifactId>mysql-connector-j</artifactId>
+  <version>${mysql.version}</version>
+  <scope>test</scope>
+</dependency>
 
-    <!-- ✅ JUnit 5 (one dependency is enough) -->
+
+    <!-- JUnit 5 (API + engine) -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -48,57 +57,63 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- ✅ In-memory DB for DAO tests -->
+    <!-- Test-scope MySQL driver for unit tests -->
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>${h2.version}</version>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>${mysql.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <!-- (Optional) Mockito for mocking if needed -->
-    <!--
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>5.12.0</version>
-      <scope>test</scope>
-    </dependency>
-    -->
   </dependencies>
 
   <build>
     <plugins>
-      <!-- Runs JUnit 5 tests -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <release>21</release>
+        </configuration>
+      </plugin>
+
+      <!-- JUnit 5 + JDBC props for tests -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire.version}</version>
         <configuration>
-          <!-- required for some JPMS/Jakarta setups -->
           <useModulePath>false</useModulePath>
+          <systemPropertyVariables>
+            <PAHANA_JDBC_URL>jdbc:mysql://127.0.0.1:3306/pahanaedu?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC</PAHANA_JDBC_URL>
+            <PAHANA_JDBC_USER>root</PAHANA_JDBC_USER>
+            <PAHANA_JDBC_PASS></PAHANA_JDBC_PASS>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
 
-      <!-- (Optional) Code coverage report at target/site/jacoco/index.html -->
+      <!-- Optional: coverage -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.version}</version>
         <executions>
           <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
+            <goals><goal>prepare-agent</goal></goals>
           </execution>
           <execution>
             <id>report</id>
             <phase>test</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
+            <goals><goal>report</goal></goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+        </configuration>
       </plugin>
     </plugins>
   </build>

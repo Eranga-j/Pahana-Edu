@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BillsResource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.resources</a> &gt; <span class="el_source">BillsResource.java</span></div><h1>BillsResource.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.resources;
+import com.pahanaedu.service.dao.BillDAO; import com.pahanaedu.service.model.*;
+import jakarta.ws.rs.*; import jakarta.ws.rs.core.*; import java.math.BigDecimal; import java.time.LocalDateTime; import java.sql.Timestamp; import java.util.*;
+@Path(&quot;bills&quot;) @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON)
+<span class="nc" id="L5">public class BillsResource {</span>
+<span class="nc" id="L6">    private final BillDAO dao = new BillDAO();</span>
+<span class="nc" id="L7">    public static class CreateBillRequest { public int customerId; public int createdBy; public java.util.List&lt;Line&gt; lines; }</span>
+<span class="nc" id="L8">    public static class Line { public int itemId; public int qty; public java.math.BigDecimal unitPrice; }</span>
+    @POST public Response create(CreateBillRequest req){
+        try{
+<span class="nc bnc" id="L11" title="All 10 branches missed.">            if (req==null || req.customerId&lt;=0 || req.createdBy&lt;=0 || req.lines==null || req.lines.isEmpty())</span>
+<span class="nc" id="L12">                return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of(&quot;error&quot;,&quot;Invalid bill data&quot;)).build();</span>
+<span class="nc" id="L13">            java.util.List&lt;BillItem&gt; items = new java.util.ArrayList&lt;&gt;(); BigDecimal total = BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L14" title="All 2 branches missed.">            for (Line l: req.lines){ BigDecimal lineTotal = l.unitPrice.multiply(java.math.BigDecimal.valueOf(l.qty));</span>
+<span class="nc" id="L15">                items.add(new BillItem(0,l.itemId,null,l.qty,l.unitPrice,lineTotal)); total = total.add(lineTotal); }</span>
+<span class="nc" id="L16">            Bill bill = new Bill(); bill.setBillNo(&quot;INV-&quot; + System.currentTimeMillis()); bill.setCustomerId(req.customerId); bill.setTotalAmount(total); bill.setCreatedBy(req.createdBy); bill.setItems(items);</span>
+<span class="nc" id="L17">            return Response.status(Response.Status.CREATED).entity(dao.create(bill)).build();</span>
+<span class="nc" id="L18">        }catch(Exception e){ e.printStackTrace(); return Response.serverError().entity(java.util.Map.of(&quot;error&quot;, e.getMessage())).build(); }</span>
+    }
+    @GET @Path(&quot;{id}&quot;) public Response get(@PathParam(&quot;id&quot;) int id){
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        try{ Bill b = dao.findById(id); return b==null? Response.status(Response.Status.NOT_FOUND).build(): Response.ok(b).build(); }</span>
+<span class="nc" id="L22">        catch(Exception e){ return Response.serverError().entity(java.util.Map.of(&quot;error&quot;, e.getMessage())).build(); }</span>
+    }
+    @GET public Response list(@QueryParam(&quot;from&quot;) String from, @QueryParam(&quot;to&quot;) String to){
+        try{
+<span class="nc bnc" id="L26" title="All 4 branches missed.">            java.time.LocalDateTime fromDt = (from==null || from.isBlank())? LocalDateTime.now().minusDays(30) : LocalDateTime.parse(from);</span>
+<span class="nc bnc" id="L27" title="All 4 branches missed.">            java.time.LocalDateTime toDt = (to==null || to.isBlank())? LocalDateTime.now() : LocalDateTime.parse(to);</span>
+<span class="nc" id="L28">            return Response.ok(dao.listRange(Timestamp.valueOf(fromDt), Timestamp.valueOf(toDt))).build();</span>
+<span class="nc" id="L29">        }catch(Exception e){ return Response.serverError().entity(java.util.Map.of(&quot;error&quot;, e.getMessage())).build(); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

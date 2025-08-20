@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BillItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.model</a> &gt; <span class="el_source">BillItem.java</span></div><h1>BillItem.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.model;
+
+import jakarta.json.bind.annotation.JsonbPropertyOrder;
+import java.math.BigDecimal;
+
+@JsonbPropertyOrder({ &quot;id&quot;, &quot;itemId&quot;, &quot;itemName&quot;, &quot;qty&quot;, &quot;unitPrice&quot;, &quot;lineTotal&quot; })
+public class BillItem {
+
+    private int id;
+    private int itemId;
+    private String itemName;
+
+    /** Always ≥ 1 (default 1). */
+<span class="fc" id="L14">    private int qty = 1;</span>
+
+    /** Never null; never negative. */
+<span class="fc" id="L17">    private BigDecimal unitPrice = BigDecimal.ZERO;</span>
+
+    /** Never null; usually = qty * unitPrice. */
+<span class="fc" id="L20">    private BigDecimal lineTotal = BigDecimal.ZERO;</span>
+
+<span class="fc" id="L22">    public BillItem() { }</span>
+
+    public BillItem(int id, int itemId, String itemName, int qty,
+<span class="fc" id="L25">                    BigDecimal unitPrice, BigDecimal lineTotal) {</span>
+<span class="fc" id="L26">        this.id = id;</span>
+<span class="fc" id="L27">        this.itemId = itemId;</span>
+<span class="fc" id="L28">        this.itemName = itemName;</span>
+<span class="fc" id="L29">        setQty(qty);</span>
+<span class="fc" id="L30">        setUnitPrice(unitPrice);</span>
+        // If caller didn't pass lineTotal, compute it
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (lineTotal == null) {</span>
+<span class="nc" id="L33">            recomputeLineTotal();</span>
+        } else {
+<span class="fc" id="L35">            setLineTotal(lineTotal);</span>
+        }
+<span class="fc" id="L37">    }</span>
+
+    // ---- Getters / Setters (null-safe &amp; validated)
+
+<span class="nc" id="L41">    public int getId() { return id; }</span>
+<span class="nc" id="L42">    public void setId(int id) { this.id = id; }</span>
+
+<span class="fc" id="L44">    public int getItemId() { return itemId; }</span>
+<span class="fc" id="L45">    public void setItemId(int v) { this.itemId = v; }</span>
+
+<span class="nc" id="L47">    public String getItemName() { return itemName; }</span>
+<span class="nc" id="L48">    public void setItemName(String v) { this.itemName = v; }</span>
+
+<span class="fc" id="L50">    public int getQty() { return qty; }</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">    public void setQty(int v) { this.qty = (v &lt; 1) ? 1 : v; }</span>
+
+<span class="fc" id="L53">    public BigDecimal getUnitPrice() { return unitPrice; }</span>
+    public void setUnitPrice(BigDecimal v) {
+<span class="pc bpc" id="L55" title="2 of 4 branches missed.">        if (v == null || v.signum() &lt; 0) {</span>
+<span class="nc" id="L56">            this.unitPrice = BigDecimal.ZERO;</span>
+        } else {
+<span class="fc" id="L58">            this.unitPrice = v;</span>
+        }
+<span class="fc" id="L60">    }</span>
+
+<span class="fc" id="L62">    public BigDecimal getLineTotal() { return lineTotal; }</span>
+    public void setLineTotal(BigDecimal v) {
+<span class="pc bpc" id="L64" title="2 of 4 branches missed.">        if (v == null || v.signum() &lt; 0) {</span>
+            // keep consistent rather than accept a negative/null
+<span class="nc" id="L66">            recomputeLineTotal();</span>
+        } else {
+<span class="fc" id="L68">            this.lineTotal = v;</span>
+        }
+<span class="fc" id="L70">    }</span>
+
+    // ---- Helpers
+
+    /** Recompute line total from qty * unitPrice (use before persist if needed). */
+    public void recomputeLineTotal() {
+<span class="nc" id="L76">        this.lineTotal = this.unitPrice.multiply(BigDecimal.valueOf(this.qty));</span>
+<span class="nc" id="L77">    }</span>
+
+    /** Ensure lineTotal matches qty * unitPrice (useful after deserialization). */
+    public void ensureConsistent() {
+<span class="nc" id="L81">        recomputeLineTotal();</span>
+<span class="nc" id="L82">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L86">        return &quot;BillItem{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, itemId=&quot; + itemId +
+                &quot;, itemName='&quot; + itemName + '\'' +
+                &quot;, qty=&quot; + qty +
+                &quot;, unitPrice=&quot; + unitPrice +
+                &quot;, lineTotal=&quot; + lineTotal +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

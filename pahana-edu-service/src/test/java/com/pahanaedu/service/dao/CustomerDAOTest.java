@@ -1,116 +1,80 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
- */
 package com.pahanaedu.service.dao;
 
 import com.pahanaedu.service.model.Customer;
+import org.junit.jupiter.api.*;
+
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- *
- * @author User
- */
-public class CustomerDAOTest {
-    
-    public CustomerDAOTest() {
-    }
-    
-    @BeforeAll
-    public static void setUpClass() {
-    }
-    
-    @AfterAll
-    public static void tearDownClass() {
-    }
-    
+class CustomerDAOTest {
+
+    private CustomerDAO dao;
+
     @BeforeEach
-    public void setUp() {
-    }
-    
-    @AfterEach
-    public void tearDown() {
+    void setUp() {
+        dao = new CustomerDAO();
     }
 
-    /**
-     * Test of findAll method, of class CustomerDAO.
-     */
-    @Test
-    public void testFindAll() throws Exception {
-        System.out.println("findAll");
-        CustomerDAO instance = new CustomerDAO();
-        List<Customer> expResult = null;
-        List<Customer> result = instance.findAll();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    private static Customer newCustomer() {
+        Customer c = new Customer();
+        c.setAccountNumber("T" + System.nanoTime()); // unique per test run
+        c.setName("Test Customer");
+        c.setAddress("Test Address");
+        c.setPhone("0712345678");
+        return c;
     }
 
-    /**
-     * Test of findById method, of class CustomerDAO.
-     */
     @Test
-    public void testFindById() throws Exception {
-        System.out.println("findById");
-        int id = 0;
-        CustomerDAO instance = new CustomerDAO();
-        Customer expResult = null;
-        Customer result = instance.findById(id);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    void testFindAll() throws Exception {
+        List<Customer> list = dao.findAll();
+        assertNotNull(list, "findAll should not return null");
+        // list may be empty on first run — that's OK. No size assertion here.
     }
 
-    /**
-     * Test of create method, of class CustomerDAO.
-     */
     @Test
-    public void testCreate() throws Exception {
-        System.out.println("create");
-        Customer c = null;
-        CustomerDAO instance = new CustomerDAO();
-        Customer expResult = null;
-        Customer result = instance.create(c);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    void testCreateAndFindById() throws Exception {
+        Customer created = dao.create(newCustomer());
+        assertNotNull(created, "create must return a Customer");
+        assertTrue(created.getId() > 0, "ID must be generated");
+        assertNotNull(created.getAccountNumber(), "accountNumber should be set");
+
+        Customer fetched = dao.findById(created.getId());
+        assertNotNull(fetched, "findById must return the created customer");
+        assertEquals(created.getAccountNumber(), fetched.getAccountNumber(), "accountNumber must match");
+
+        // cleanup
+        assertTrue(dao.delete(created.getId()), "cleanup delete should succeed");
     }
 
-    /**
-     * Test of update method, of class CustomerDAO.
-     */
     @Test
-    public void testUpdate() throws Exception {
-        System.out.println("update");
-        int id = 0;
-        Customer c = null;
-        CustomerDAO instance = new CustomerDAO();
-        boolean expResult = false;
-        boolean result = instance.update(id, c);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    void testUpdate() throws Exception {
+        Customer created = dao.create(newCustomer());
+        int id = created.getId();
+
+        // mutate fields
+        created.setName("Updated Name");
+        created.setPhone("0770000000");
+
+        // Your DAO signature is update(int, Customer) per the prototype test
+        boolean updated = dao.update(id, created);
+        assertTrue(updated, "update should return true");
+
+        Customer fetched = dao.findById(id);
+        assertNotNull(fetched, "updated customer should exist");
+        assertEquals("Updated Name", fetched.getName());
+        assertEquals("0770000000", fetched.getPhone());
+
+        // cleanup
+        assertTrue(dao.delete(id), "cleanup delete should succeed");
     }
 
-    /**
-     * Test of delete method, of class CustomerDAO.
-     */
     @Test
-    public void testDelete() throws Exception {
-        System.out.println("delete");
-        int id = 0;
-        CustomerDAO instance = new CustomerDAO();
-        boolean expResult = false;
-        boolean result = instance.delete(id);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+    void testDelete() throws Exception {
+        Customer created = dao.create(newCustomer());
+        int id = created.getId();
+
+        assertTrue(dao.delete(id), "delete should return true");
+        assertNull(dao.findById(id), "deleted customer should not be found");
     }
-    
 }

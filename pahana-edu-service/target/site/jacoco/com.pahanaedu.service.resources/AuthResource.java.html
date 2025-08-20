@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthResource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.resources</a> &gt; <span class="el_source">AuthResource.java</span></div><h1>AuthResource.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.resources;
+import com.pahanaedu.service.dao.UserDAO; import com.pahanaedu.service.model.User;
+import jakarta.ws.rs.*; import jakarta.ws.rs.core.*;
+@Path(&quot;auth&quot;) @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON)
+<span class="nc" id="L5">public class AuthResource {</span>
+<span class="nc" id="L6">    public static class LoginRequest { public String username; public String password; }</span>
+    @POST @Path(&quot;login&quot;)
+    public Response login(LoginRequest req){
+<span class="nc bnc" id="L9" title="All 10 branches missed.">        if (req==null || req.username==null || req.username.isBlank() || req.password==null || req.password.isBlank())</span>
+<span class="nc" id="L10">            return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of(&quot;error&quot;,&quot;Username and password are required&quot;)).build();</span>
+        try{
+<span class="nc" id="L12">            UserDAO dao = new UserDAO();</span>
+<span class="nc" id="L13">            String salt = dao.getSaltForUser(req.username);</span>
+<span class="nc bnc" id="L14" title="All 2 branches missed.">            if (salt == null) return Response.status(Response.Status.UNAUTHORIZED).entity(java.util.Map.of(&quot;error&quot;,&quot;Invalid credentials&quot;)).build();</span>
+<span class="nc" id="L15">            String pwdHash = Hashing.sha256Hex(req.password + salt);</span>
+<span class="nc" id="L16">            User user = dao.validateLogin(req.username, pwdHash);</span>
+<span class="nc bnc" id="L17" title="All 2 branches missed.">            if (user == null) return Response.status(Response.Status.UNAUTHORIZED).entity(java.util.Map.of(&quot;error&quot;,&quot;Invalid credentials&quot;)).build();</span>
+<span class="nc" id="L18">            return Response.ok(user).build();</span>
+<span class="nc" id="L19">        }catch(Exception e){ e.printStackTrace(); return Response.serverError().entity(java.util.Map.of(&quot;error&quot;, e.getMessage())).build(); }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
