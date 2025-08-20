@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ page import="java.util.*, java.math.BigDecimal, java.math.RoundingMode, java.text.DecimalFormat" %>
-<%@ taglib uri="http://jakarta.ee/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
 <%@ include file="/common/header.jspf" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}" />

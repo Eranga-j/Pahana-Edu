@@ -115,6 +115,7 @@ public class BillingServlet extends HttpServlet {
                 subtotal = subtotal.add(lineTotal);
                 chosen++;
 
+                // NOTE: service expects itemId, qty, unitPrice; sending lineTotal is harmless but optional
                 lines.add(Json.createObjectBuilder()
                         .add("itemId", itemId)
                         .add("qty", qty)
@@ -129,15 +130,15 @@ public class BillingServlet extends HttpServlet {
             return;
         }
 
+        // Service calculates totals; we keep local totals only for UI
         BigDecimal tax   = subtotal.multiply(new BigDecimal("0.18"));
         BigDecimal total = subtotal.add(tax);
 
         JsonObject payload = Json.createObjectBuilder()
                 .add("customerId",  customerId)
                 .add("createdBy",   createdBy)
-                .add("totalAmount", total)
-                .add("items",       lines)
-                .build();
+                .add("lines",       lines)  // <-- CHANGED from "items" to "lines"
+                .build();                   // <-- REMOVED totalAmount from payload
 
         JsonObject createdObj = null;
         try {

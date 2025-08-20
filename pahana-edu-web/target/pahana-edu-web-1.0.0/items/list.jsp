@@ -34,8 +34,8 @@
 <!-- If the servlet forwarded with an error (e.g., delete failed), show it -->
 <c:if test="${not empty error}">
   <div class="alert-error">
-    <strong>Action failed:</strong>
-    <div><c:out value="${error}"/></div>
+    <strong>This Item Number is Already Registered. Please Try a new one</strong>
+    
   </div>
 </c:if>
 

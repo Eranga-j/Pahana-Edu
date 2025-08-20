@@ -17,7 +17,7 @@
   </properties>
 
   <dependencies>
-    <!-- Servlet/JSP/JSON-B, etc. provided by the app server (Tomcat/Jetty/etc.) -->
+    <!-- Jakarta EE API (provided by your app server) -->
     <dependency>
       <groupId>jakarta.platform</groupId>
       <artifactId>jakarta.jakartaee-api</artifactId>
@@ -25,18 +25,18 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- PDF generation (used by BillPdfServlet) -->
-    <dependency>
-      <groupId>com.github.librepdf</groupId>
-      <artifactId>openpdf</artifactId>
-      <version>1.3.32</version>
-    </dependency>
-
-    <!-- JSTL for JSPs (Jakarta namespace) -->
+    <!-- JSTL 3.0.1 (bundle in WAR so taglibs resolve: uri="jakarta.tags.core") -->
     <dependency>
       <groupId>org.glassfish.web</groupId>
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
       <version>3.0.1</version>
+    </dependency>
+
+    <!-- PDF generation -->
+    <dependency>
+      <groupId>com.github.librepdf</groupId>
+      <artifactId>openpdf</artifactId>
+      <version>1.3.32</version>
     </dependency>
   </dependencies>
 

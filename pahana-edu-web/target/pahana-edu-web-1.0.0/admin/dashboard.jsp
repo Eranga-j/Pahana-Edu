@@ -98,39 +98,49 @@
 
     <div class="wrap">
       <div class="tiles">
+        <!-- Customers -->
         <a class="tile" href="<%=ctx%>/customers">
           <div class="icon i1">👥</div>
           <div class="name">Customers</div>
           <div class="muted">Create, update, delete</div>
         </a>
+
+        <!-- Items -->
         <a class="tile" href="<%=ctx%>/items">
           <div class="icon i2">📦</div>
           <div class="name">Items</div>
           <div class="muted">Manage inventory & prices</div>
         </a>
+
+        <!-- Billing -->
         <a class="tile" href="<%=ctx%>/billing">
           <div class="icon i3">🧾</div>
           <div class="name">Billing</div>
           <div class="muted">Create invoices</div>
         </a>
+
+        <!-- Sales Reports -->
         <a class="tile" href="<%=ctx%>/admin/reports">
           <div class="icon i4">📈</div>
           <div class="name">Sales Reports</div>
           <div class="muted">Daily/period summaries</div>
         </a>
+
+        <!-- Customer Bill Report -->
+        <a class="tile" href="<%=ctx%>/admin/customer-report" title="View bills for a selected customer">
+          <div class="icon i5" aria-hidden="true">🧾</div>
+          <div class="name">Customer Bill Report</div>
+          <div class="muted">Bills by customer</div>
+        </a>
+
+        <!-- HELP (moved here, before Settings) -->
         <a class="tile" href="<%=ctx%>/help.jsp">
           <div class="icon i5">📘</div>
           <div class="name">Help</div>
           <div class="muted">How to use Pahana Edu</div>
         </a>
-          
-          <a class="tile" href="<%=ctx%>/admin/customer-report" title="View bills for a selected customer">
-  <div class="icon i5" aria-hidden="true">🧾</div>
-  <div class="name">Customer Bill Report</div>
-  <div class="muted">Bills by customer</div>
-</a>
 
-
+        <!-- Settings -->
         <a class="tile" href="<%=ctx%>/settings.jsp">
           <div class="icon i6">⚙️</div>
           <div class="name">Settings</div>
