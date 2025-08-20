@@ -1,0 +1,34 @@
+-------------------------------------------------------------------------------
+Test set: com.pahanaedu.service.dao.BillDAOTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 0.936 s <<< FAILURE! -- in com.pahanaedu.service.dao.BillDAOTest
+com.pahanaedu.service.dao.BillDAOTest.testListRange -- Time elapsed: 0.829 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <null> but was: <[]>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1145)
+	at com.pahanaedu.service.dao.BillDAOTest.testListRange(BillDAOTest.java:83)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.pahanaedu.service.dao.BillDAOTest.testFindById -- Time elapsed: 0.013 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: The test case is a prototype.
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at com.pahanaedu.service.dao.BillDAOTest.testFindById(BillDAOTest.java:69)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.pahanaedu.service.dao.BillDAOTest.testCreate -- Time elapsed: 0.013 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.pahanaedu.service.model.Bill.getBillNo()" because "bill" is null
+	at com.pahanaedu.service.dao.BillDAO.create(BillDAO.java:10)
+	at com.pahanaedu.service.dao.BillDAOTest.testCreate(BillDAOTest.java:51)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
