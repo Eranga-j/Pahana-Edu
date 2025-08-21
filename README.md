@@ -1,4 +1,4 @@
-# Pahana Edu — Online Billing (Task B Complete Code)
+# Pahana Edu — Online Billing System
 
 Two NetBeans/Maven projects:
 - **pahana-edu-service** — Jakarta EE 10 JAX-RS REST service (GlassFish 7).
