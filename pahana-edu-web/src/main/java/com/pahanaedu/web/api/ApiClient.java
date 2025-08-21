@@ -24,9 +24,63 @@ public class ApiClient {
                 : baseUrl;
     }
 
-    /* ======================= Public API ======================= */
+    /* ==========================================================
+     *  New: response wrapper (status + body [+ parsed JSON])
+     * ========================================================== */
+    public static final class ApiResponse {
+        public final int status;
+        public final String body;
+        /** Parsed JSON if the body is valid JSON, otherwise null. */
+        public final JsonStructure json;
 
-    /** GET that expects a JSON response */
+        public ApiResponse(int status, String body, JsonStructure json) {
+            this.status = status;
+            this.body = body;
+            this.json = json;
+        }
+
+        public boolean is2xx() { return status >= 200 && status < 300; }
+    }
+
+    /* ==========================================================
+     *  Non-throwing helpers (prefer these in servlets)
+     * ========================================================== */
+
+    /** GET — returns status + body; parses JSON if present. */
+    public ApiResponse get(String path) throws IOException {
+        HttpURLConnection con = open("GET", path, null);
+        int code = con.getResponseCode();
+        String body = readBody((code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream());
+        return new ApiResponse(code, body, tryParseJson(body));
+    }
+
+    /** POST/PUT/PATCH with JSON request; returns status + body; parses JSON if present. */
+    public ApiResponse send(String method, String path, String jsonBody) throws IOException {
+        HttpURLConnection con = open(method, path, "application/json");
+        con.setDoOutput(true);
+        if (jsonBody != null) {
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        int code = con.getResponseCode();
+        String body = readBody((code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream());
+        return new ApiResponse(code, body, tryParseJson(body));
+    }
+
+    /** DELETE with no request body/Content-Type; returns status + body; parses JSON if present. */
+    public ApiResponse deleteForStatus(String path) throws IOException {
+        HttpURLConnection con = open("DELETE", path, null);
+        int code = con.getResponseCode();
+        String body = readBody((code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream());
+        return new ApiResponse(code, body, tryParseJson(body));
+    }
+
+    /* ==========================================================
+     *  Backward compatible strict methods (throw on non-2xx)
+     * ========================================================== */
+
+    /** GET that expects a JSON response (throws on non-2xx or non-JSON). */
     public JsonStructure getJson(String path) throws IOException {
         HttpURLConnection con = open("GET", path, null);
         int code = con.getResponseCode();
@@ -38,7 +92,7 @@ public class ApiClient {
         throw new IOException("GET " + path + " failed: HTTP " + code + " - " + body);
     }
 
-    /** POST/PUT/DELETE when you DON'T need JSON back (e.g., returns 204 No Content) */
+    /** POST/PUT/DELETE when you DON'T need JSON back (throws on non-2xx). */
     public void sendJsonNoBody(String method, String path, String json) throws IOException {
         HttpURLConnection con = open(method, path, "application/json");
         con.setDoOutput(true);
@@ -56,7 +110,7 @@ public class ApiClient {
         }
     }
 
-    /** POST/PUT when you DO need JSON back (e.g., create bill returns the bill) */
+    /** POST/PUT that expects JSON back (throws on non-2xx or non-JSON). */
     public JsonStructure sendJsonForJson(String method, String path, String json) throws IOException {
         HttpURLConnection con = open(method, path, "application/json");
         con.setDoOutput(true);
@@ -79,18 +133,14 @@ public class ApiClient {
         return sendJsonForJson(method, path, json);
     }
 
-    /**
-     * DELETE with **no request body and no Content-Type**.
-     * Many servers return 400 if a DELETE is sent with a JSON content-type but empty body.
-     */
+    /** Legacy strict DELETE (throws on non-2xx). */
     public void delete(String path) throws IOException {
         HttpURLConnection con = open("DELETE", path, null); // no Content-Type, no doOutput
         int code = con.getResponseCode();
         String body = readBody((code >= 200 && code < 300) ? con.getInputStream() : con.getErrorStream());
 
         if (code >= 200 && code < 300) {
-            // success; nothing to return
-            return;
+            return; // success
         }
         throw new IOException("DELETE " + path + " failed: HTTP " + code + (body == null || body.isBlank() ? "" : " - " + body));
     }
@@ -117,6 +167,16 @@ public class ApiClient {
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
             return sb.toString();
+        }
+    }
+
+    private static JsonStructure tryParseJson(String body) {
+        if (body == null || body.isBlank()) return null;
+        try (StringReader sr = new StringReader(body);
+             JsonReader jr = Json.createReader(sr)) {
+            return jr.read();
+        } catch (Exception ignore) {
+            return null; // not JSON
         }
     }
 

@@ -1,17 +1,14 @@
 package com.pahanaedu.web.servlets;
 
 import com.pahanaedu.web.api.ApiClient;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
+import jakarta.json.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -36,8 +33,7 @@ public class CustomerServlet extends HttpServlet {
             throws ServletException, IOException {
 
         ApiClient api = new ApiClient(apiBase);
-        JsonStructure res = api.getJson("/customers");
-        JsonArray arr = res.asJsonArray();
+        JsonArray arr = api.getJson("/customers").asJsonArray();
 
         List<Map<String, Object>> list = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
@@ -81,7 +77,7 @@ public class CustomerServlet extends HttpServlet {
             switch (action) {
 
                 case "create": {
-                    // server-side duplicate checks
+                    // Fast path: pre-check duplicates
                     if (accountTaken(api, accountNumber, null)) {
                         setFieldErrors(req, true, false);
                         keepForm(req, accountNumber, name, address, phone);
@@ -95,51 +91,41 @@ public class CustomerServlet extends HttpServlet {
                         return;
                     }
 
-                    try {
-                        api.sendJsonForJson("POST", "/customers", payload.toString());
-                    } catch (IOException e) {
-                        // On DB unique violation, decide which field
-                        if (accountTaken(api, accountNumber, null)) {
-                            setFieldErrors(req, true, false);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
-                            return;
-                        }
-                        if (phoneTaken(api, phone, null)) {
-                            setFieldErrors(req, false, true);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
-                            return;
-                        }
-                        throw e;
+                    ApiResponse r = sendJsonWithStatus("POST", "/customers", payload.toString());
+                    if (r.status >= 200 && r.status < 300) {
+                        resp.sendRedirect(req.getContextPath() + "/customers?created=1");
+                        return;
                     }
-                    resp.sendRedirect(req.getContextPath() + "/customers?created=1");
+                    if (r.status == 409) { // duplicate from service
+                        String code = parseErrorCode(r.body);
+                        if ("DUPLICATE_ACCOUNT".equals(code) || accountTaken(api, accountNumber, null)) {
+                            setFieldErrors(req, true, false);
+                        } else if ("DUPLICATE_PHONE".equals(code) || phoneTaken(api, phone, null)) {
+                            setFieldErrors(req, false, true);
+                        } else {
+                            req.setAttribute("error", "Duplicate value detected.");
+                        }
+                        keepForm(req, accountNumber, name, address, phone);
+                        req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
+                        return;
+                    }
+
+                    // Unexpected error
+                    req.setAttribute("error", "Could not save customer. Please try again.");
+                    keepForm(req, accountNumber, name, address, phone);
+                    req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
                     return;
                 }
 
                 case "update": {
                     Integer id = idStr.isEmpty() ? null : Integer.valueOf(idStr);
 
-                    // treat missing id like create
-                    if (id == null) {
-                        if (accountTaken(api, accountNumber, null)) {
-                            setFieldErrors(req, true, false);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
-                            return;
-                        }
-                        if (phoneTaken(api, phone, null)) {
-                            setFieldErrors(req, false, true);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
-                            return;
-                        }
-                        api.sendJsonForJson("POST", "/customers", payload.toString());
-                        resp.sendRedirect(req.getContextPath() + "/customers?created=1");
+                    if (id == null) { // treat like create
+                        resp.sendRedirect(req.getContextPath() + "/customers");
                         return;
                     }
 
-                    // update (ignore self)
+                    // Pre-check duplicates (ignoring self)
                     if (accountTaken(api, accountNumber, id)) {
                         req.setAttribute("id", idStr);
                         setFieldErrors(req, true, false);
@@ -155,25 +141,30 @@ public class CustomerServlet extends HttpServlet {
                         return;
                     }
 
-                    try {
-                        api.sendJsonForJson("PUT", "/customers/" + idStr, payload.toString());
-                    } catch (IOException e) {
-                        req.setAttribute("id", idStr);
-                        if (accountTaken(api, accountNumber, id)) {
-                            setFieldErrors(req, true, false);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/edit.jsp").forward(req, resp);
-                            return;
-                        }
-                        if (phoneTaken(api, phone, id)) {
-                            setFieldErrors(req, false, true);
-                            keepForm(req, accountNumber, name, address, phone);
-                            req.getRequestDispatcher("/customers/edit.jsp").forward(req, resp);
-                            return;
-                        }
-                        throw e;
+                    ApiResponse r = sendJsonWithStatus("PUT", "/customers/" + idStr, payload.toString());
+                    if (r.status >= 200 && r.status < 300) {
+                        resp.sendRedirect(req.getContextPath() + "/customers?updated=1");
+                        return;
                     }
-                    resp.sendRedirect(req.getContextPath() + "/customers?updated=1");
+                    if (r.status == 409) {
+                        req.setAttribute("id", idStr);
+                        String code = parseErrorCode(r.body);
+                        if ("DUPLICATE_ACCOUNT".equals(code) || accountTaken(api, accountNumber, id)) {
+                            setFieldErrors(req, true, false);
+                        } else if ("DUPLICATE_PHONE".equals(code) || phoneTaken(api, phone, id)) {
+                            setFieldErrors(req, false, true);
+                        } else {
+                            req.setAttribute("error", "Duplicate value detected.");
+                        }
+                        keepForm(req, accountNumber, name, address, phone);
+                        req.getRequestDispatcher("/customers/edit.jsp").forward(req, resp);
+                        return;
+                    }
+
+                    req.setAttribute("id", idStr);
+                    req.setAttribute("error", "Could not update customer. Please try again.");
+                    keepForm(req, accountNumber, name, address, phone);
+                    req.getRequestDispatcher("/customers/edit.jsp").forward(req, resp);
                     return;
                 }
 
@@ -189,7 +180,7 @@ public class CustomerServlet extends HttpServlet {
                 }
             }
         } catch (Exception ex) {
-            // unexpected error -> generic message on create page
+            getServletContext().log("Customer save failed", ex);
             req.setAttribute("error", "Something went wrong while saving the customer.");
             keepForm(req, accountNumber, name, address, phone);
             req.getRequestDispatcher("/customers/create.jsp").forward(req, resp);
@@ -202,19 +193,17 @@ public class CustomerServlet extends HttpServlet {
     private boolean phoneTaken(ApiClient api, String phone, Integer selfId) {
         String target = normalizePhone(phone);
 
-        // Try filtered endpoint; if backend ignores it, we still scan the results
         try {
             JsonStructure js = api.getJson("/customers?phone=" + url(phone));
             if (js != null) {
-                if (js.getValueType() == JsonStructure.ValueType.ARRAY) {
+                if (js.getValueType() == JsonValue.ValueType.ARRAY) {
                     if (matchPhone(js.asJsonArray(), target, selfId)) return true;
-                } else if (js.getValueType() == JsonStructure.ValueType.OBJECT) {
+                } else if (js.getValueType() == JsonValue.ValueType.OBJECT) {
                     if (matchPhone(js.asJsonObject(), target, selfId)) return true;
                 }
             }
         } catch (Exception ignored) {}
 
-        // Fallback: fetch all and scan
         try {
             JsonArray arr = api.getJson("/customers").asJsonArray();
             return matchPhone(arr, target, selfId);
@@ -228,9 +217,9 @@ public class CustomerServlet extends HttpServlet {
         try {
             JsonStructure js = api.getJson("/customers?accountNumber=" + url(account));
             if (js != null) {
-                if (js.getValueType() == JsonStructure.ValueType.ARRAY) {
+                if (js.getValueType() == JsonValue.ValueType.ARRAY) {
                     if (matchAccount(js.asJsonArray(), target, selfId)) return true;
-                } else if (js.getValueType() == JsonStructure.ValueType.OBJECT) {
+                } else if (js.getValueType() == JsonValue.ValueType.OBJECT) {
                     if (matchAccount(js.asJsonObject(), target, selfId)) return true;
                 }
             }
@@ -277,7 +266,45 @@ public class CustomerServlet extends HttpServlet {
         catch (Exception e) { return s; }
     }
 
-    /* ================= Helpers ================= */
+    /* ================= HTTP helpers (capture status + body) ================= */
+
+    private static final class ApiResponse { final int status; final String body;
+        ApiResponse(int s, String b){ this.status=s; this.body=b; } }
+
+    private ApiResponse sendJsonWithStatus(String method, String path, String body) throws IOException {
+        URL url = new URL(apiBase + path);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod(method);
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setRequestProperty("Accept", "application/json");
+        if ("POST".equals(method) || "PUT".equals(method)) {
+            conn.setDoOutput(true);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        int status = conn.getResponseCode();
+        InputStream is = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+        String respBody = "";
+        if (is != null) respBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        conn.disconnect();
+        return new ApiResponse(status, respBody);
+    }
+
+    private static String parseErrorCode(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            var rdr = Json.createReader(new java.io.StringReader(json));
+            JsonStructure js = rdr.read();
+            if (js.getValueType() == JsonValue.ValueType.OBJECT) {
+                JsonObject o = js.asJsonObject();
+                if (o.containsKey("error") && !o.isNull("error")) return o.getString("error", null);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /* ================= misc ================= */
 
     private static void keepForm(HttpServletRequest req, String acc, String nm, String addr, String ph) {
         req.setAttribute("form_accountNumber", acc);
@@ -293,22 +320,14 @@ public class CustomerServlet extends HttpServlet {
     }
 
     private void deleteNoBody(String path) throws IOException {
-        String urlStr = apiBase + path;
-        URL url = new URL(urlStr);
+        URL url = new URL(apiBase + path);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("DELETE");
         conn.setRequestProperty("Accept", "application/json");
-        conn.setDoOutput(false);
         conn.connect();
         conn.getResponseCode();
         conn.disconnect();
     }
 
     private static String safe(String v) { return v == null ? "" : v.trim(); }
-
-    @SuppressWarnings("unused")
-    private static boolean isDuplicateError(IOException e) {
-        String msg = String.valueOf(e.getMessage()).toLowerCase();
-        return msg.contains("duplicate") || msg.contains("unique") || msg.contains("uq_") || msg.contains("constraint");
-    }
 }

@@ -3,14 +3,14 @@ Pahana Edu Service,com.pahanaedu.service.db,Database,23,33,1,1,6,12,2,2,1,2
 Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.ItemSalesRow,3,0,0,0,1,0,1,0,1,0
 Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.SalesSummaryRow,3,0,0,0,1,0,1,0,1,0
 Pahana Edu Service,com.pahanaedu.service.dao,UserDAO,0,80,3,7,0,9,3,5,0,3
-Pahana Edu Service,com.pahanaedu.service.dao,CustomerDAO,2,176,3,7,0,12,3,9,0,7
+Pahana Edu Service,com.pahanaedu.service.dao,CustomerDAO,29,247,10,14,5,63,10,11,0,9
 Pahana Edu Service,com.pahanaedu.service.dao,BillDAO,28,300,10,10,2,35,7,7,0,4
 Pahana Edu Service,com.pahanaedu.service.dao,ItemDAO,2,163,3,7,0,7,3,9,0,7
 Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO.CustomerSalesRow,3,0,0,0,1,0,1,0,1,0
 Pahana Edu Service,com.pahanaedu.service.dao,ReportDAO,255,0,10,0,56,0,10,0,5,0
 Pahana Edu Service,com.pahanaedu.service,ApplicationConfig,3,0,0,0,1,0,1,0,1,0
 Pahana Edu Service,com.pahanaedu.service.resources,ItemsResource,92,0,16,0,9,0,14,0,6,0
-Pahana Edu Service,com.pahanaedu.service.resources,CustomersResource,89,0,14,0,9,0,13,0,6,0
+Pahana Edu Service,com.pahanaedu.service.resources,CustomersResource,199,0,18,0,55,0,15,0,6,0
 Pahana Edu Service,com.pahanaedu.service.resources,AuthResource.LoginRequest,3,0,0,0,1,0,1,0,1,0
 Pahana Edu Service,com.pahanaedu.service.resources,ReportsResource,48,0,4,0,6,0,7,0,5,0
 Pahana Edu Service,com.pahanaedu.service.resources,AuthResource,83,0,14,0,11,0,9,0,2,0

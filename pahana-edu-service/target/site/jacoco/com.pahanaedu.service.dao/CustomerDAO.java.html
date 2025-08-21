@@ -1,30 +1,122 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomerDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Pahana Edu Service</a> &gt; <a href="index.source.html" class="el_package">com.pahanaedu.service.dao</a> &gt; <span class="el_source">CustomerDAO.java</span></div><h1>CustomerDAO.java</h1><pre class="source lang-java linenums">package com.pahanaedu.service.dao;
-import com.pahanaedu.service.db.Database; import com.pahanaedu.service.model.Customer; import java.sql.*; import java.util.*;
-<span class="fc" id="L3">public class CustomerDAO {</span>
+
+import com.pahanaedu.service.db.Database;
+import com.pahanaedu.service.model.Customer;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L10">public class CustomerDAO {</span>
+
+    // MySQL/MariaDB integrity violations use SQLState 23000 (e.g., duplicate key)
+    public static final String SQLSTATE_INTEGRITY_VIOLATION = &quot;23000&quot;;
+
     public List&lt;Customer&gt; findAll() throws SQLException {
-<span class="fc" id="L5">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(&quot;SELECT id, account_number, name, address, phone FROM customers ORDER BY id DESC&quot;); ResultSet rs = ps.executeQuery()) {</span>
-<span class="fc bfc" id="L6" title="All 2 branches covered.">            List&lt;Customer&gt; list = new ArrayList&lt;&gt;(); while (rs.next()) list.add(map(rs)); return list;</span>
+<span class="fc" id="L16">        String sql = &quot;SELECT id, account_number, name, address, phone &quot; +</span>
+                     &quot;FROM customers ORDER BY id DESC&quot;;
+<span class="fc" id="L18">        try (Connection con = Database.getConnection();</span>
+<span class="fc" id="L19">             PreparedStatement ps = con.prepareStatement(sql);</span>
+<span class="fc" id="L20">             ResultSet rs = ps.executeQuery()) {</span>
+<span class="fc" id="L21">            List&lt;Customer&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">            while (rs.next()) list.add(map(rs));</span>
+<span class="fc" id="L23">            return list;</span>
         }
     }
+
     public Customer findById(int id) throws SQLException {
-<span class="fc" id="L10">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(&quot;SELECT id, account_number, name, address, phone FROM customers WHERE id=?&quot;)) {</span>
-<span class="fc bfc" id="L11" title="All 2 branches covered.">            ps.setInt(1, id); try (ResultSet rs = ps.executeQuery()) { return rs.next() ? map(rs) : null; }</span>
+<span class="fc" id="L28">        String sql = &quot;SELECT id, account_number, name, address, phone &quot; +</span>
+                     &quot;FROM customers WHERE id=?&quot;;
+<span class="fc" id="L30">        try (Connection con = Database.getConnection();</span>
+<span class="fc" id="L31">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="fc" id="L32">            ps.setInt(1, id);</span>
+<span class="fc" id="L33">            try (ResultSet rs = ps.executeQuery()) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                return rs.next() ? map(rs) : null;</span>
+            }
         }
     }
+
     public Customer create(Customer c) throws SQLException {
-<span class="fc" id="L15">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(&quot;INSERT INTO customers (account_number, name, address, phone) VALUES (?,?,?,?)&quot;, Statement.RETURN_GENERATED_KEYS)) {</span>
-<span class="fc" id="L16">            ps.setString(1, c.getAccountNumber()); ps.setString(2, c.getName()); ps.setString(3, c.getAddress()); ps.setString(4, c.getPhone()); ps.executeUpdate();</span>
-<span class="pc bpc" id="L17" title="1 of 2 branches missed.">            try (ResultSet k = ps.getGeneratedKeys()) { if (k.next()) c.setId(k.getInt(1)); } return c;</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (c == null) throw new IllegalArgumentException(&quot;Customer is null&quot;);</span>
+<span class="fc" id="L41">        String account = safe(c.getAccountNumber());</span>
+<span class="fc" id="L42">        String name    = safe(c.getName());</span>
+<span class="fc" id="L43">        String address = nullSafe(c.getAddress());</span>
+<span class="fc" id="L44">        String phone   = nullSafe(c.getPhone());</span>
+
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">        if (account.isBlank() || name.isBlank()) {</span>
+<span class="nc" id="L47">            throw new IllegalArgumentException(&quot;Account number and name are required&quot;);</span>
+        }
+
+<span class="fc" id="L50">        String sql = &quot;INSERT INTO customers (account_number, name, address, phone) VALUES (?,?,?,?)&quot;;</span>
+<span class="fc" id="L51">        try (Connection con = Database.getConnection();</span>
+<span class="fc" id="L52">             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L53">            ps.setString(1, account);</span>
+<span class="fc" id="L54">            ps.setString(2, name);</span>
+<span class="fc" id="L55">            ps.setString(3, address);</span>
+<span class="fc" id="L56">            ps.setString(4, phone);</span>
+<span class="fc" id="L57">            ps.executeUpdate();</span>
+<span class="fc" id="L58">            try (ResultSet k = ps.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                if (k.next()) c.setId(k.getInt(1));</span>
+            }
+            // keep normalized values in returned object
+<span class="fc" id="L62">            c.setAccountNumber(account);</span>
+<span class="fc" id="L63">            c.setName(name);</span>
+<span class="fc" id="L64">            c.setAddress(address);</span>
+<span class="fc" id="L65">            c.setPhone(phone);</span>
+<span class="fc" id="L66">            return c;</span>
+
+<span class="nc" id="L68">        } catch (SQLIntegrityConstraintViolationException dup) {</span>
+            // Re-throw the same type so the resource can translate to HTTP 409
+<span class="nc" id="L70">            throw dup;</span>
         }
     }
+
     public boolean update(int id, Customer c) throws SQLException {
-<span class="fc" id="L21">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(&quot;UPDATE customers SET account_number=?, name=?, address=?, phone=? WHERE id=?&quot;)) {</span>
-<span class="pc bpc" id="L22" title="1 of 2 branches missed.">            ps.setString(1, c.getAccountNumber()); ps.setString(2, c.getName()); ps.setString(3, c.getAddress()); ps.setString(4, c.getPhone()); ps.setInt(5, id); return ps.executeUpdate()==1;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (c == null) throw new IllegalArgumentException(&quot;Customer is null&quot;);</span>
+<span class="fc" id="L76">        String account = safe(c.getAccountNumber());</span>
+<span class="fc" id="L77">        String name    = safe(c.getName());</span>
+<span class="fc" id="L78">        String address = nullSafe(c.getAddress());</span>
+<span class="fc" id="L79">        String phone   = nullSafe(c.getPhone());</span>
+
+<span class="fc" id="L81">        String sql = &quot;UPDATE customers SET account_number=?, name=?, address=?, phone=? WHERE id=?&quot;;</span>
+<span class="fc" id="L82">        try (Connection con = Database.getConnection();</span>
+<span class="fc" id="L83">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="fc" id="L84">            ps.setString(1, account);</span>
+<span class="fc" id="L85">            ps.setString(2, name);</span>
+<span class="fc" id="L86">            ps.setString(3, address);</span>
+<span class="fc" id="L87">            ps.setString(4, phone);</span>
+<span class="fc" id="L88">            ps.setInt(5, id);</span>
+<span class="fc" id="L89">            int updated = ps.executeUpdate();</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            return updated == 1;</span>
+
+<span class="nc" id="L92">        } catch (SQLIntegrityConstraintViolationException dup) {</span>
+            // Duplicate account number on update
+<span class="nc" id="L94">            throw dup;</span>
         }
     }
+
     public boolean delete(int id) throws SQLException {
-<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(&quot;DELETE FROM customers WHERE id=?&quot;)) { ps.setInt(1, id); return ps.executeUpdate()==1; }</span>
+<span class="fc" id="L99">        String sql = &quot;DELETE FROM customers WHERE id=?&quot;;</span>
+<span class="fc" id="L100">        try (Connection con = Database.getConnection();</span>
+<span class="fc" id="L101">             PreparedStatement ps = con.prepareStatement(sql)) {</span>
+<span class="fc" id="L102">            ps.setInt(1, id);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            return ps.executeUpdate() == 1;</span>
+        }
     }
-<span class="fc" id="L28">    private Customer map(ResultSet rs) throws SQLException { return new Customer(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)); }</span>
+
+    // ---------- helpers ----------
+
+    private static Customer map(ResultSet rs) throws SQLException {
+<span class="fc" id="L110">        return new Customer(</span>
+<span class="fc" id="L111">            rs.getInt(1),       // id</span>
+<span class="fc" id="L112">            rs.getString(2),    // account_number</span>
+<span class="fc" id="L113">            rs.getString(3),    // name</span>
+<span class="fc" id="L114">            rs.getString(4),    // address</span>
+<span class="fc" id="L115">            rs.getString(5)     // phone</span>
+        );
+    }
+
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">    private static String safe(String s) { return s == null ? &quot;&quot; : s.trim(); }</span>
+<span class="pc bpc" id="L120" title="2 of 4 branches missed.">    private static String nullSafe(String s) { s = (s == null ? &quot;&quot; : s.trim()); return s.isEmpty() ? null : s; }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -102,7 +102,7 @@ public class LoginServlet extends HttpServlet {
 
         } catch (Exception ex) {
             // Network/JSON/errors from service
-            req.setAttribute("error", "Login service is unavailable. Please try again.");
+            req.setAttribute("error", "Invalid Password. Please try again!");
             req.setAttribute("usernamePrefill", username);
             req.getRequestDispatcher("/login.jsp").forward(req, resp);
         }
